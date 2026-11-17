@@ -1,0 +1,77 @@
+/* 设计令牌。色值与尺寸取自目标站点实测，见 design/01-research.md */
+:root {
+  /* 文字与纸面 */
+  --ink: #3b3229;
+  --ink-soft: #8c8175;
+  --paper: #f7f1e3;
+  --paper-edge: #e6dcc6;
+
+  /* 强调色：进度条、焦点、选中 */
+  --accent: #f0b95a;
+  --accent-soft: rgba(240, 185, 90, 0.16);
+
+  /* 面板与描边 */
+  --panel: rgba(28, 24, 21, 0.72);
+  --panel-solid: #1c1815;
+  --hair: rgba(255, 255, 255, 0.12);
+  --muted: rgba(244, 234, 214, 0.62);
+
+  /* 阴影与动效 */
+  --shadow: 0 40px 80px rgba(0, 0, 0, 0.45);
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+
+  /* 书桌：由 body[data-desk] 覆盖 */
+  --desk-base: #514944;
+  --desk-shade: rgba(0, 0, 0, 0.55);
+  --desk-light: rgba(255, 255, 255, 0.06);
+
+  /* 尺寸 */
+  --radius-panel: 20px;
+  --radius-pill: 18px;
+  --drawer-w: 340px;
+  --appearance-w: 360px;
+  --tilt-w: 252px;
+
+  /* 阅读字体栈：woff2 子集在 Phase 6 接入，先用系统字体兜底 */
+  --font-classic: 'EB Garamond', 'Songti SC', 'SimSun', 'Source Han Serif SC', serif;
+  --font-serif-sc: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', 'SimSun', serif;
+  --font-sans-sc: 'Noto Sans SC', 'Source Han Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-wenkai: 'LXGW WenKai', 'Kaiti SC', 'KaiTi', 'STKaiti', serif;
+  --font-xiaowei: 'ZCOOL XiaoWei', 'Songti SC', 'SimSun', serif;
+
+  /* 当前使用的正文与引用字体 */
+  --font-reader: var(--font-wenkai);
+  --font-quote: var(--font-wenkai);
+}
+
+/* 桌面主题：walnut / ash / ink / baize / stone */
+body[data-desk='walnut'] {
+  --desk-base: #514944;
+  --desk-shade: rgba(0, 0, 0, 0.55);
+  --desk-light: rgba(255, 255, 255, 0.05);
+}
+body[data-desk='ash'] {
+  --desk-base: #b7b0a2;
+  --desk-shade: rgba(60, 48, 36, 0.34);
+  --desk-light: rgba(255, 255, 255, 0.22);
+  --panel: rgba(46, 40, 34, 0.7);
+  --muted: rgba(60, 50, 40, 0.66);
+}
+body[data-desk='ink'] {
+  --desk-base: #363a3b;
+  --desk-shade: rgba(0, 0, 0, 0.6);
+  --desk-light: rgba(255, 255, 255, 0.05);
+}
+body[data-desk='baize'] {
+  --desk-base: #93a592;
+  --desk-shade: rgba(30, 46, 34, 0.4);
+  --desk-light: rgba(255, 255, 255, 0.18);
+  --panel: rgba(34, 44, 36, 0.72);
+}
+body[data-desk='stone'] {
+  --desk-base: #cccec8;
+  --desk-shade: rgba(60, 62, 58, 0.36);
+  --desk-light: rgba(255, 255, 255, 0.26);
+  --panel: rgba(48, 50, 47, 0.7);
+  --muted: rgba(50, 52, 48, 0.66);
+}

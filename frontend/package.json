@@ -1,0 +1,24 @@
+{
+    "name": "reader-frontend",
+    "private": true,
+    "version": "0.1.0",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vue-tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json && vite build",
+        "preview": "vite preview",
+        "typecheck": "vue-tsc --noEmit -p tsconfig.json"
+    },
+    "dependencies": {
+        "pinia": "^4.1.0",
+        "vue": "^3.5.45",
+        "vue-router": "^5.5.1"
+    },
+    "devDependencies": {
+        "@types/node": "^26.6.6",
+        "@vitejs/plugin-vue": "^6.0.11",
+        "typescript": "~5.9.3",
+        "vite": "^8.3.8",
+        "vue-tsc": "^3.3.14"
+    }
+}
