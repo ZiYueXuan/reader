@@ -1,0 +1,24 @@
+.idea
+.vscode
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# 后端运行期数据：数据库与书籍文件不入库
+backend/data/
+backend/.env
+
+# 前端
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# 构建示例书时的下载缓存
+.cache/
+
+# 系统
+.DS_Store
+Thumbs.db
