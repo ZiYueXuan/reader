@@ -1,0 +1,143 @@
+/**
+ * 书页排版样式（全局，不 scoped）。
+ *
+ * 选择器统一挂在 `.page-flow` 下：这个元素既是引擎分页的容器，
+ * 也是调试页与阅读器共用的排版根。尺寸由引擎写入，这里只管字形排版。
+ */
+
+.page-flow {
+    color: var(--ink);
+    transform: translate3d(0, 0, 0);
+    will-change: transform;
+    font-kerning: normal;
+    /* 英文两端对齐靠断字，否则窄行会被拉开成河 */
+    hyphens: auto;
+}
+
+/* 翻页动画由 view 在切换期间加 `.is-turning`，重排时绝不带过渡 */
+.page-flow.is-turning {
+    transition: transform 380ms var(--ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .page-flow.is-turning {
+        transition: none;
+    }
+}
+
+/* ------------------------------------------------------------------ 块 */
+
+.page-flow .b {
+    margin: 0;
+    overflow-wrap: break-word;
+}
+
+.page-flow p.b {
+    text-indent: 2em;
+}
+
+/* 章首段不缩进（中英排版惯例） */
+.page-flow section > .b:first-child,
+.page-flow section > .b-h1 + .b,
+.page-flow section > .b-h2 + .b,
+.page-flow section > .b-h3 + .b {
+    text-indent: 0;
+}
+
+.page-flow .b-li {
+    text-indent: 0;
+    padding-left: 1.2em;
+}
+
+.page-flow .b-h1 {
+    margin: 0.6em 0 1.4em;
+    font-family: var(--font-heading);
+    font-size: 1.5em;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    text-align: center;
+    text-indent: 0;
+}
+
+.page-flow .b-h2 {
+    margin: 0.5em 0 1em;
+    font-family: var(--font-heading);
+    font-size: 1.24em;
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    text-align: center;
+    text-indent: 0;
+}
+
+.page-flow .b-h3 {
+    margin: 0.5em 0 0.6em;
+    font-family: var(--font-heading);
+    font-size: 1.1em;
+    font-weight: 400;
+    text-indent: 0;
+}
+
+/* 章首页的章名：居中大字 + 下方大留白（上方就是版心顶端，不再叠大边距） */
+.page-flow .b-h1.b-chapter {
+    margin: 0.15em 0 1.9em;
+    font-size: 1.62em;
+    letter-spacing: 0.12em;
+}
+
+.page-flow .b-blockquote {
+    margin: 0.5em 1.4em;
+    text-indent: 0;
+    color: var(--ink-soft);
+}
+
+.page-flow .b-figcaption {
+    margin: 0.5em 0 1.1em;
+    text-align: center;
+    font-size: 0.82em;
+    text-indent: 0;
+    color: var(--ink-soft);
+    break-inside: avoid;
+}
+
+.page-flow .b-img {
+    display: block;
+    max-width: 100%;
+    max-height: calc(var(--ph, 600px) * 0.82);
+    margin: 0.9em auto;
+    break-inside: avoid;
+    cursor: zoom-in;
+}
+
+/* 图与图注作为一个整体断列：否则图留在上一列、图注单独落到下一列 */
+.page-flow .b-figure {
+    margin: 0;
+    break-inside: avoid;
+}
+
+.page-flow .b-hr {
+    width: 38%;
+    margin: 1.2em auto;
+    border: 0;
+    border-top: 1px solid var(--paper-edge);
+}
+
+/* ------------------------------------------------------------------ 章与页 */
+
+/* 章起新列（奇偶对齐留到 Phase 9）。
+   强制断列只对列容器的直接子元素生效，所以类挂在 section 上，不能挂到章内首块。 */
+.page-flow > section.b-start {
+    break-before: column;
+}
+
+/* 双页模式下首列留白：保证第 1 页落在右页（recto）。
+   开关不靠 props，而是引擎在测量前同步写入的 data-spread，
+   否则 Vue 的异步渲染会让首屏量到错误列数。 */
+.page-flow > .page-blank-start {
+    display: none;
+}
+
+.page-flow[data-spread='2'] > .page-blank-start {
+    display: block;
+    height: 1px;
+    break-after: column;
+}

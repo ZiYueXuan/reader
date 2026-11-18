@@ -285,6 +285,23 @@ repaginate():
 **列数兜底**：`measure()` 同时取 `round((scrollWidth + GAP) / STEP)` 与「最后一个块所在列 + 1」的较大值。部分引擎在
 `overflow: visible` 下 `scrollWidth` 只反映可视宽度。
 
+**渲染层约束（Phase 4 实测，必须遵守）**
+
+1. **列号靠 rect 差 ⇒ `flow` 祖先链只能仿射变换**。引擎用「字符 rect 与 flow rect 的屏幕差 / STEP」取列号，
+   而 `perspective` 会按 y 缩放 x：`flow` 被 `translate3d` 推出数万像素后，误差随列号累积到 1/4 列
+   （实测 8 屏列号往返不一致、64 个空白 spread、版心与视口差 2px）。因此倾斜只能用 `rotateX`（无透视）/`scale`
+   等仿射变换；真 2.5D 透视必须先重做测量层（改为读 `offsetLeft`/布局坐标而非屏幕 rect），留 Phase 9。
+2. **`break-before: column` 只对列容器的直接子元素生效**。章起新列必须挂在章容器 `<section>` 上；
+   挂在章内首块上实测 14/15 章不断列。
+3. **双页首列留白不能靠 props**。`.page-flow > .page-blank-start { height: 1px; break-after: column }` 常驻 DOM，
+   开关由引擎在 `repaginate()` 前**同步**写入的 `data-spread` 属性控制——用 props 会因 Vue 异步渲染让首屏量到错误列数。
+   页码随之平移：`pageNumber(column) = column + 1 - pageBase`，`pageBase = pageForOffset(0, 0) >= 1 ? 1 : 0`，
+   既保证第 1 页落在右页，又让页码仍从 1 起。
+4. **图与图注合成一个 `<figure>` 并 `break-inside: avoid`**，作为整体断列；图与图注整体高于一列时按 CSS 规范
+   仍会分列（实测 1000 字图注跨 1.91 列），属预期——否则超高插图会撑破版心。
+5. **合成章标题不参与字符坐标**。示例书多数章节正文里没有 `h1`（标题只写进 nav），渲染时用 `chapter.title` 补一个
+   不带 `data-offset` 的标题块；`DOM textContent ≡ Block.text` 的不变量只对带 `data-offset` 的块成立。
+
 ### 4.3 坐标系统与三种映射
 
 ```

@@ -305,6 +305,41 @@ Alice
 
 **验收**：用键盘从封面一路翻到末页不报错、不空白、不错位；每个 spread 都完整可读，没有半行被切；图片与图注不跨页断裂；点击左右页缘与方向键行为一致。
 
+**完成记录（真实 Chrome 实测）**：
+
+- 实现：`components/reader/{BookSpread,PageFlow,ImageLightbox}.vue` + `types.ts`（LightboxImage）、`views/ReaderView.vue`、
+  `stores/reader.ts`、`styles/book.css`（全局排版样式，调试页与阅读器共用）、`main.ts` 引入样式。
+- 双页几何（1600×1000 视口）：`PW×PH = 510×739`、`GAP = 48`、`STEP = 558`、`flowWidth = 1068 = 2×510 + 48`、
+  `margins.x = 42`、`headerH = 30`；页眉 `offsetLeft = 600 = margins.x + STEP`、页码
+  `offsetTop = 808 = margins.y + headerH + PH`，
+  即页眉页码与版心严格对齐。
+- 排版与分页（《呐喊》）：`columns = 144`、`spreads = 72`、`pageBase = 1`（第 1 页在右页）；15 章全部从列首开始
+  （列号 1,6,17,22,32,39,42,48,57,68,109,118,124,129,133，均为 `STEP` 整数倍）。
+- 验收四项均 PASS（36 项自检脚本，覆盖三项以上）：
+    1. 键盘从头翻到尾：71 次翻页、0 空白 spread、0 列号往返漂移、0 半行被切；末屏 left=142 right=143；
+    2. 每屏完整可读：逐屏检查「字符中心在视口内」与「横向完整时纵向越界」，`cut = 0`；
+    3. 图片与图注：分项脚本 17 项 PASS（结构、断列原子性、文本不变量、弹层图注）；
+    4. 页缘点击与方向键一致：右缘→spread 1、左缘→spread 0；另测页角拖动、`Home/End`、滚轮与 `↓` 不翻页。
+- 单页重排（820×900）：`SPREAD = 1`、`data-spread = 1`、首列不留白（`pageBase = 0`）、页码与页眉正常，
+  位置保持 `ch14 → 14`；放大回双页后位置不变。英文书（Alice）正文西文优先字体栈生效，图片走 `blob:` + 弹层。
+- 实测中修正的问题（已回填 02-architecture §4.2）：
+    - **移除 `.stage` 的 `perspective`**：引擎用 rect 差算列号，透视按 y 缩放 x，flow 被 translate 出数万像素后
+      累积误差达 1/4 列（实测 8 屏列号漂移 + 64 个空白 spread）。倾斜只能是仿射变换，真 2.5D 留 Phase 9；
+    - **章起新列必须挂在列容器直接子元素**：`break-before: column` 挂章内首块不生效（实测 14/15 章没断），改挂 `<section>`；
+    - **首列留白不能靠 props**：Vue 异步渲染会让首屏量错列数，改为引擎在测量前同步写 `data-spread` 属性，
+      常驻的 `.page-blank-start` 按属性开关；页码 `= 列号 + 1 - pageBase`；
+    - **`pageMargin` 取值域不一致**（prefs 用 `normal`，layout 用 `medium`）：store 加映射，否则版面参数永远拿默认值；
+    - **末屏不虚构页码**：最后一屏左页不存在列时 `leftPage = -1`，不再显示不存在的页；补 `goFirst/goLast` 供 `Home/End`；
+    - **合成章标题**：示例书 15 章里 13 章正文没有 `h1`（标题只写进 nav），用 `chapter.title` 补
+      `<h1 class="b-h1 b-chapter">`，
+      不带 `data-offset`，不破坏「DOM 文本 ≡ Block.text」不变量；
+    - **图 + 图注合成 `<figure>`**：两者作为整体断列（`break-inside: avoid`），否则图注会单独落到下一列；
+      图与图注整体高于一列时按 CSS 规范仍会分列（实测 1000 字图注跨 1.91 列），属预期。
+- 翻页交互：`←/→`、`Space/Shift+Space`、`PageUp/PageDown`、`Home/End`、页缘 12% 热区、页角拖动（`--drag` 跟随 + 松手判定
+  `≤-60` 下一页 / `≥60` 上一页）；翻页动画 380ms（`prefers-reduced-motion` 关闭），重排前强制移除过渡类。
+- 遗留：章必须起于右页（奇偶对齐）留 Phase 9；页角卷曲、真 2.5D 透视留 Phase 9；纸纹层带 `mix-blend-mode`，
+  翻页时会重新合成，Phase 9 精修时一并评估性能。
+
 ## Phase 5 · dock 与目录抽屉
 
 - `DockBar`：胶囊 + `backdrop-filter: blur(18px)` + 圆角 18px + 距底 20px

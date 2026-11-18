@@ -17,6 +17,7 @@ export {
 
 export {
     PaginationEngine,
+    type Coordinate,
     type PageAnchor,
     type PaginateResult,
     type Position,
