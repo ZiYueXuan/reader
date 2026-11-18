@@ -38,21 +38,26 @@
 
 后端：
 
-- [ ] `services/storage.py`：sha256 计算、`data/books/{id}/book.epub` 落盘、路径穿越校验
-- [ ] `services/epub_meta.py`：`zipfile` + `xml.etree` 读 container → opf → `dc:title/creator/language/identifier` + 封面 item
-- [ ] 封面转存 `data/covers/{id}.jpg`（若为 png/webp 原样存，扩展名跟随）
-- [ ] API：`GET /api/books`（带 `percent`）、`POST /api/books`、`GET /api/books/{id}`、`GET /api/books/{id}/file`、`GET /api/books/{id}/cover`、`PATCH /api/books/{id}`、`DELETE /api/books/{id}`
-- [ ] 重复上传按 `file_hash` 幂等返回已有书籍
-- [ ] 非 epub / 缺 mimetype → 422 并给出可读错误
+- [x] `services/storage.py`：sha256 计算、`data/books/{id}/book.epub` 落盘、路径穿越校验
+- [x] `services/epub_meta.py`：`zipfile` + `xml.etree` 读 container → opf → `dc:title/creator/language/identifier` + 封面
+  item
+- [x] 封面转存 `data/covers/{id}.jpg`（若为 png/webp 原样存，扩展名跟随）
+- [x] API：`GET /api/books`（带 `percent`）、`POST /api/books`、`GET /api/books/{id}`、`GET /api/books/{id}/file`、
+  `GET /api/books/{id}/cover`、`PATCH /api/books/{id}`、`DELETE /api/books/{id}`
+- [x] 重复上传按 `file_hash` 幂等返回已有书籍
+- [x] 非 epub / 缺 mimetype → 422 并给出可读错误
 
 前端：
 
-- [ ] `ShelfView`：封面网格、书名/作者、未读进度环、空态插画
-- [ ] 上传：`<input type="file" accept=".epub,application/epub+zip">` + 全窗口拖放遮罩
-- [ ] `stores/library.ts`：列表拉取、上传中状态、失败提示
-- [ ] `api/client.ts`：baseURL 可配、错误归一、超时
+- [x] `ShelfView`：封面网格、书名/作者、未读进度环、空态插画
+- [x] 上传：`<input type="file" accept=".epub,application/epub+zip">` + 全窗口拖放遮罩
+- [x] `stores/library.ts`：列表拉取、上传中状态、失败提示
+- [x] `api/client.ts`：baseURL 可配、错误归一、超时
 
 **验收**：拖入一本 epub → 2 秒内书架出现带封面与书名的新条目；再次拖入同一文件不产生重复条目；刷新后仍在。
+
+> 首版补记：删除书籍带二次确认；错误响应统一为 `{error:{code,message}}`；`percent` 约定 0–1；封面按实际 media-type 存
+`.jpg/.png/.svg/...`，`GET /cover` 回传对应 `Content-Type`。
 
 ## Phase 2 · EPUB 解析
 
