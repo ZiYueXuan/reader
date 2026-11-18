@@ -8,13 +8,20 @@ const routes: RouteRecordRaw[] = [
     {path: '/book/:id', name: 'reader', component: ReaderView, props: true},
 ]
 
-// 解析自检页只在开发环境存在，生产构建里连代码都不会带上
+// 解析与分页自检页只在开发环境存在，生产构建里连代码都不会带上
 if (import.meta.env.DEV) {
-    routes.push({
-        path: '/debug/parse',
-        name: 'parse-debug',
-        component: () => import('@/views/ParseDebugView.vue'),
-    })
+    routes.push(
+        {
+            path: '/debug/parse',
+            name: 'parse-debug',
+            component: () => import('@/views/ParseDebugView.vue'),
+        },
+        {
+            path: '/debug/pagination',
+            name: 'pagination-debug',
+            component: () => import('@/views/PaginationDebugView.vue'),
+        },
+    )
 }
 
 const router = createRouter({

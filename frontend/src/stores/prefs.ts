@@ -56,7 +56,19 @@ const FONT_VARS: Record<ReaderFontId, string> = {
     xiaowei: 'var(--font-xiaowei)',
 }
 
+/** 西文优先栈的前缀：英文书正文/标题先用它，再回退到所选中文字体 */
+const LATIN_PREFIX: Record<ReaderFontId, string> = {
+    classic: 'var(--font-latin-serif)',
+    'serif-sc': 'var(--font-latin-serif)',
+    'sans-sc': 'var(--font-latin-sans)',
+    wenkai: 'var(--font-latin-serif)',
+    xiaowei: 'var(--font-latin-serif)',
+}
+
 export const fontVar = (id: ReaderFontId): string => FONT_VARS[id]
+
+/** `西文栈, 中文字体栈`——英文书用它，避免 U+2019 被 CJK 字体渲染成全角 */
+export const fontLatinVar = (id: ReaderFontId): string => `${LATIN_PREFIX[id]}, ${FONT_VARS[id]}`
 
 export const usePrefsStore = defineStore('prefs', () => {
     const prefs = reactive<Prefs>(load())
@@ -74,8 +86,11 @@ export const usePrefsStore = defineStore('prefs', () => {
         () => [prefs.font, prefs.quoteFont] as const,
         ([font, quote]) => {
             const root = document.documentElement.style
+            const quoteId = quote === 'follow' ? font : quote
             root.setProperty('--font-reader', fontVar(font))
-            root.setProperty('--font-quote', fontVar(quote === 'follow' ? font : quote))
+            root.setProperty('--font-quote', fontVar(quoteId))
+            root.setProperty('--font-reader-latin', fontLatinVar(font))
+            root.setProperty('--font-quote-latin', fontLatinVar(quoteId))
         },
         {immediate: true},
     )

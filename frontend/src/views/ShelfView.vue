@@ -263,6 +263,7 @@ function formatSize(bytes: number | null): string {
             <span>EPUB 3 · 本地存储</span>
             <span class="foot-right">
                 <RouterLink v-if="isDev" to="/debug/parse" class="dev-link">解析自检</RouterLink>
+                <RouterLink v-if="isDev" to="/debug/pagination" class="dev-link">分页自检</RouterLink>
                 <span v-if="library.count">共 {{ library.count }} 本</span>
             </span>
         </footer>

@@ -24,8 +24,6 @@ import hashlib
 import html as html_lib
 import os
 import re
-import sys
-import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -33,6 +31,9 @@ import zipfile
 from dataclasses import dataclass
 from html.parser import HTMLParser
 from pathlib import Path
+
+import sys
+import time
 
 ROOT = Path(__file__).resolve().parent.parent
 CACHE = ROOT / ".cache" / "samples"
@@ -123,7 +124,11 @@ HEADINGS = {"h1": "h1", "h2": "h2", "h3": "h3", "h4": "h2", "h5": "h2", "h6": "h
 
 
 class BlockExtractor(HTMLParser):
-    """把 XHTML/HTML 摊平成块级序列，保留少量行内强调。"""
+    """把 XHTML/HTML 摊平成块级序列。
+
+    Block.text 是纯文本：em/strong 等行内强调只保留文字，不写入标签，
+    否则会被 esc() 转义成字面 “<em>…</em>” 漏进正文（渲染时可见）。
+    """
 
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
@@ -132,8 +137,6 @@ class BlockExtractor(HTMLParser):
         self._cur: Block | None = None
         self._buf: list[str] = []
         self._in_quote = 0
-        self._em = 0
-        self._strong = 0
 
     # -- 内部 -- #
     def _flush(self) -> None:
@@ -192,14 +195,6 @@ class BlockExtractor(HTMLParser):
                 self.blocks.append(Block("img", src=src))
         elif tag == "figcaption":
             self._open("figcaption")
-        elif tag in ("em", "i"):
-            if self._cur is not None:
-                self._em += 1
-                self._buf.append("<em>")
-        elif tag in ("strong", "b"):
-            if self._cur is not None:
-                self._strong += 1
-                self._buf.append("<strong>")
         elif tag == "br":
             if self._cur is not None:
                 self._buf.append("\n")
@@ -212,14 +207,6 @@ class BlockExtractor(HTMLParser):
             self._flush()
         elif tag == "blockquote":
             self._in_quote = max(0, self._in_quote - 1)
-        elif tag in ("em", "i"):
-            if self._em and self._cur is not None:
-                self._em -= 1
-                self._buf.append("</em>")
-        elif tag in ("strong", "b"):
-            if self._strong and self._cur is not None:
-                self._strong -= 1
-                self._buf.append("</strong>")
 
     def handle_data(self, data: str) -> None:
         if self._skip or self._cur is None:
@@ -591,6 +578,9 @@ def verify(path: Path) -> None:
             body = zf.read(n).decode("utf-8")
             total += len(re.sub(r"<[^>]+>", "", body))
             assert "<html" in body and "</html>" in body
+            # 行内标签一旦被写进 Block.text，就会被 esc() 转义成字面文本
+            assert "&lt;em&gt;" not in body, f"{n} 含字面的 <em> 标签"
+            assert "&lt;strong&gt;" not in body, f"{n} 含字面的 <strong> 标签"
         print(
             f"  校验通过: {len(xhtmls)} 章 / 正文约 {total} 字符 / "
             f"{len(names)} 个条目 / {path.stat().st_size / 1024:.0f} KB"

@@ -39,9 +39,21 @@
   --font-wenkai: 'LXGW WenKai', 'Kaiti SC', 'KaiTi', 'STKaiti', serif;
   --font-xiaowei: 'ZCOOL XiaoWei', 'Songti SC', 'SimSun', serif;
 
-  /* 当前使用的正文与引用字体 */
+  /* 西文衬线 / 无衬线栈。英文书必须让它们排在中文字体之前：
+     否则 U+2019 撇号会落到 CJK 字体上变成 1em 全角字形，出现 “it’ s” 假空格。 */
+  --font-latin-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, 'Times New Roman';
+  --font-latin-sans: 'Helvetica Neue', 'Segoe UI', Arial;
+
+  /* 中文优先：中文书正文（全角标点必须由中文字体给出）。
+     --font-*-latin 为西文优先栈，由 prefs store 在运行时按所选字体拼成
+     `西文栈, 中文字体栈`，供 :lang(en) 的书使用。 */
   --font-reader: var(--font-wenkai);
-  --font-quote: var(--font-wenkai);
+  --font-quote: var(--font-reader);
+  --font-reader-latin: var(--font-latin-serif), var(--font-wenkai);
+  --font-quote-latin: var(--font-reader-latin);
+
+  /* 章节标题字体：中文走宋体，英文书在 .flow:lang(en) 里覆盖为西文优先 */
+  --font-heading: var(--font-serif-sc);
 }
 
 /* 桌面主题：walnut / ash / ink / baize / stone */

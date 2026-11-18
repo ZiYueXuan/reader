@@ -232,7 +232,7 @@ buildPageIndex(flow) -> PageIndex:
       el = flow.querySelector(`[data-block="${chapter.index}:${block.i}"]`)
       rect = el.getBoundingClientRect()
       xInFlow = rect.left - flow.getBoundingClientRect().left   // 两者同受 transform 影响，差值即内容坐标
-      page = Math.floor((xInFlow + step / 2) / step)            // + 半列容差
+      page = Math.floor((xInFlow + step / 2) / step)            // + 半列容差：块左缘必落在列边界上
       anchors.push({ chapter: chapter.index, offset: block.offset, page })
   return { anchors }        // 按 (chapter, offset) 升序
 ```
@@ -247,18 +247,26 @@ pageForOffset(chapter, offset) -> page:
   // 只有跨段内偏移才做二次精确测量，一次开销
   range = rangeForOffset(chapter, offset)
   x = range.getBoundingClientRect().left - flowRect.left
-  return Math.floor((x + step / 2) / step)
+  return max(anchor.page, Math.floor((x + 1) / step))   // 字符矩形不能加 step/2！
+```
 
+**为什么块矩形加 `step/2`、字符矩形只加 1px**
+：块级元素的左缘一定压在列边界上（浮动取整误差在亚像素级），加半列容差可以吸收抖动；而单个字符的左缘可能落在列内任意位置，加半列会把右半列的字符整体误判到下一列，导致「字号往返后页码不一致」这类系统性漂移。
+
+```
 offsetForPage(page) -> { chapter, offset }:
-  anchor = 二分查找第一个 anchors.page >= page      // 页首块
-  return { chapter: anchor.chapter, offset: anchor.offset }
+  anchor = 二分查找第一个 anchors.page >= page
+  if (anchor.page == page) return anchor
+  // 页首不一定有块首：上一页的长段可能横跨到本页
+  // 在 anchor 的前一个块内对字符做二分，找到第一个属于本页的字符
+offsetForPage 实现为 positionAtPage 的包壳，二者共用同一套逻辑。
 ```
 
 **重排（换字体/字号/行距/窗口尺寸）后位置还原**
 
 ```
 repaginate():
-  saved = currentPosition()                   // { chapter, offset }，来自锚点而非页码
+  saved = restore ?? this.anchor ?? currentPosition()   // { chapter, offset }，来自锚点而非页码
   await document.fonts.ready                  // 字体未就绪时测量必然偏
   await preloadImages(visibleRange + 1 章)    // 图片高度稳定后再测
   restoreGeometry()
@@ -266,9 +274,16 @@ repaginate():
   const { columns } = measureColumns(flow)
   pageIndex = buildPageIndex(flow)
   showSpread(Math.floor(pageForOffset(saved.chapter, saved.offset) / SPREAD))
+  this.anchor = saved                         // showSpread 会清锚点，补回来
 ```
 
 顺序不能变：`字体就绪 → 几何设定 → 等一帧 → 测量 → 建立索引 → 定位`。任何一步提前，都会拿到旧布局的尺寸。
+
+**锚点记忆（实测修正）**：`showSpread` 清空、`goTo` 设定、`repaginate` 继承并回写。若不做这层记忆，`currentPosition()`
+只能返回「当前页首个块」的偏移——这个块可能起始于**上一页**，链式重排会每一步都往回退一点，字号往返后页码就不一致了。
+
+**列数兜底**：`measure()` 同时取 `round((scrollWidth + GAP) / STEP)` 与「最后一个块所在列 + 1」的较大值。部分引擎在
+`overflow: visible` 下 `scrollWidth` 只反映可视宽度。
 
 ### 4.3 坐标系统与三种映射
 
