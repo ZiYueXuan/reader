@@ -8,6 +8,7 @@ import {useLibrary} from '@/stores/library'
 
 const router = useRouter()
 const library = useLibrary()
+const isDev = import.meta.env.DEV
 
 /* ---------------------------------------------------------------- 后端连通性 */
 const health = ref<'pending' | 'ok' | 'error'>('pending')
@@ -260,7 +261,10 @@ function formatSize(bytes: number | null): string {
 
         <footer class="foot">
             <span>EPUB 3 · 本地存储</span>
-            <span v-if="library.count">共 {{ library.count }} 本</span>
+            <span class="foot-right">
+                <RouterLink v-if="isDev" to="/debug/parse" class="dev-link">解析自检</RouterLink>
+                <span v-if="library.count">共 {{ library.count }} 本</span>
+            </span>
         </footer>
 
         <Transition name="fade">
@@ -698,6 +702,22 @@ code {
     font-size: 12px;
     letter-spacing: 0.14em;
     color: rgba(244, 234, 214, 0.34);
+}
+
+.foot-right {
+    display: inline-flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.dev-link {
+    color: rgba(244, 234, 214, 0.5);
+    border-bottom: 1px dashed rgba(244, 234, 214, 0.28);
+}
+
+.dev-link:hover {
+    color: var(--accent);
+    border-color: var(--accent);
 }
 
 /* ------------------------------------------------------------------ 拖放遮罩 */

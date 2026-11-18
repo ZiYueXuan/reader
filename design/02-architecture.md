@@ -146,21 +146,29 @@ interface Chapter {
 }
 
 interface Block {
-  type: 'p' | 'h1' | 'h2' | 'h3' | 'blockquote' | 'img' | 'figcaption' | 'hr'
+    type: 'p' | 'h1' | 'h2' | 'h3' | 'blockquote' | 'li' | 'img' | 'figcaption' | 'hr'
   text: string               // 纯文本（img 为空）
   offset: number             // 本章内起止字符偏移
   endOffset: number
   src?: string               // img 的 blob URL
   alt?: string
-  bold?: boolean; italic?: boolean   // 段内行内样式的简化表达
+    width?: number;
+    height?: number   // img 原始像素尺寸，排版前占位
+    listStyle?: 'ul' | 'ol';
+    marker?: string   // li 的样式与序号
 }
 ```
 
 要点：
 
 - **偏移只在同一章节内计算**，跨章不连续。这样单章错位不会污染全书。
-- XHTML 清洗用白名单：`p, h1-h6, blockquote, ul, ol, li, img, figure, figcaption, em, strong, i, b, br, hr, sup, a`。丢弃 `style`/`script`/`iframe`/`svg`。行内标签合并进所在块的 `text`，并保留少量样式区间（可选，首版可只取纯文本）。
-- 图片转 `blob:` URL 并缓存，同时记录原始宽高比，用于排版前占位（避免图片加载后跳页）。
+- **不变量**：`Block.text` 必须与渲染后的 DOM `textContent` 逐字相同。列表符号因此写进 `marker` 字段由模板输出，**不能用**
+  `::before { content: '•' }` —— 否则 DOM 里多出一个不存在的字符，选区换算整体错位。
+- XHTML 清洗用白名单：只把已知块级标签提成 `Block`，其余行内标签的文本合并进所在块。丢弃 `style`/`script`/`iframe`/`svg`/
+  `nav`。`epub:type` 为 `pagebreak|toc|landmarks|page-list` 的元素与 `class/id` 含 `pagenum|page-number|pagebreak`
+  的容器一并跳过。
+- 图片转 `blob:` URL 并由 `ImageStore` 统一持有，`ParsedBook.revoke()` 一次性释放；同时记录原始宽高比，用于排版前占位（避免图片加载后跳页）。
+- 抽块时顺手记录 `idOffsets: Map<元素 id, 章内偏移>`，nav 的 `#fragment` 直接查表得出 `offset`，不再二次遍历 DOM。
 - 脚注链接 `a[epub:type=noteref]` 首版降级为普通行内上标，不做弹层。
 
 ### 4.2 CSS columns 分页算法（关键）

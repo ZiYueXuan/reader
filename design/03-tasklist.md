@@ -61,18 +61,36 @@
 
 ## Phase 2 · EPUB 解析
 
-- [ ] `lib/epub/unzip.ts`：JSZip 解包，校验 `mimetype` 内容为 `application/epub+zip`
-- [ ] `lib/epub/opf.ts`：container.xml → opf 路径 → manifest/spine/metadata 解析，spine 顺序决定章节顺序
-- [ ] `lib/epub/content.ts`：XHTML → `Block[]`
+- [x] `lib/epub/unzip.ts`：JSZip 解包，校验 `mimetype` 内容为 `application/epub+zip`
+- [x] `lib/epub/opf.ts`：container.xml → opf 路径 → manifest/spine/metadata 解析，spine 顺序决定章节顺序
+- [x] `lib/epub/content.ts`：XHTML → `Block[]`
   - 白名单清洗（丢弃 `style/script/iframe/svg`）
   - 每个块累计 `offset` / `endOffset`（章内字符偏移）
   - 图片转 `blob:` URL，记录原始宽高比
   - 空段落（纯空白）剔除，避免空行占版
-- [ ] `lib/epub/nav.ts`：优先 `nav[epub:type=toc]`，回退 `toc.ncx`；输出两级 `TocNode[]`，映射到 `{chapter, offset}`
-- [ ] 章名反查：用 nav 的 href 匹配 spine 文档，得到每章标题（供右页页眉）
-- [ ] 解析完成后 `PATCH /api/books/{id}` 回传 `{toc, chapterCount}`，服务端缓存
+- [x] `lib/epub/nav.ts`：优先 `nav[epub:type=toc]`，回退 `toc.ncx`；输出两级 `TocNode[]`，映射到 `{chapter, offset}`
+- [x] 章名反查：用 nav 的 href 匹配 spine 文档，得到每章标题（供右页页眉）
+- [x] 解析完成后 `PATCH /api/books/{id}` 回传 `{toc, chapterCount}`，服务端缓存
 
 **验收**：对中文样本与英文样本各解析一次，控制台输出章节数、总块数、两级目录树、总字符数；所有插图能显示；无 XHTML 解析异常抛出（异常记 warn 继续）。
+
+**实测（开发态自检页 `/debug/parse`，仅 DEV 注册）**：
+
+| 书     | 章节 | 块   | 字符      | 目录根/总 | 插图               | 耗时     |
+|-------|----|-----|---------|-------|------------------|--------|
+| 呐喊    | 15 | 982 | 69 340  | 1/16  | 0                | 72 ms  |
+| Alice | 12 | 794 | 142 735 | 12/12 | 3（blob URL 正常渲染） | 109 ms |
+
+> 实现补记：
+> - `mimetype` 缺失或内容不对直接报错；ZIP 外层多套目录时按 `container.xml` 实际位置推断前缀；路径查找不区分大小写（真实
+    EPUB 常出现 href 与条目大小写不一致）。
+> - 按 XML 声明里的 `encoding` 解码，GBK 中文 EPUB 不会被读成乱码；XHTML 按 XML 解析失败时退回 HTML 解析。
+> - 片段定位改用抽块时顺手记下的 `idOffsets`（元素 id → 字符偏移），不再二次遍历 DOM。
+> - 图片尺寸优先取 `<img width/height>`，否则等 `Image.onload` 拿 `naturalWidth/Height`；blob URL 统一由 `ImageStore` 持有，
+    `ParsedBook.revoke()` 一次性释放。
+> - 字符数校验：对全书 XHTML 去标签后的字符数减去“块边界多计的一个空格”，与解析结果相差 14 / 9 个字符（来自段落 trim 与
+    `<br>` 归一），无整段丢失。
+> - 渲染约束：`Block.text` 必须原样输出为文本节点，不能用 `::before` 之类补列表符号，否则偏移映射会错位。
 
 ## Phase 3 · 分页引擎
 
