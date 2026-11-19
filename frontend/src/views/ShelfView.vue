@@ -543,7 +543,7 @@ h1 {
 }
 
 .meta .title {
-    font-family: var(--font-serif-sc);
+    font-family: var(--font-serif-sc), serif;
     font-size: 15px;
     letter-spacing: 0.02em;
     color: #f4ead6;
